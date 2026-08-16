@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AeroChamber</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #111827;
+        color: #f9fafb;
+        margin: 0;
+        padding: 2rem;
+      }
+      .card {
+        background: #1f2937;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 540px;
+        margin: 0 auto;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #374151;
+      }
+      .status {
+        margin-top: 1rem;
+        font-weight: bold;
+        color: #34d399;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>AeroChamber</h1>
+      <div id="sensor-list"></div>
+      <div class="status" id="status">Connecting...</div>
+    </div>
+
+    <script>
+      async function loadSensors() {
+        try {
+          const response = await fetch('/api/sensors');
+          const data = await response.json();
+          const list = document.getElementById('sensor-list');
+          list.innerHTML = '';
+
+          data.sensors.forEach((sensor) => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML = `
+              <span>Sensor ${sensor.sensorId}</span>
+              <span>${sensor.valid ? sensor.temperatureC.toFixed(2) + ' °C' : 'No data'}</span>
+            `;
+            list.appendChild(row);
+          });
+
+          document.getElementById('status').textContent = 'Data refreshed';
+        } catch (error) {
+          document.getElementById('status').textContent = 'Connection error';
+        }
+      }
+
+      setInterval(loadSensors, 1000);
+      loadSensors();
+    </script>
+  </body>
+</html>
