@@ -1,37 +1,42 @@
-# Firmware (PlatformIO + Arduino + NimBLE)
+# AeroChamber Firmware
 
-ESP32 BLE GATT firmware for browser-to-device communication over Web Bluetooth.
+Base project for the ESP32 that centralizes BMP280 sensor reads, Wi‑Fi/Bluetooth connection management, and publication of data on a local web page.
 
-## Board assumption
+## Structure
 
-The repository previously used `board = esp32dev` in PlatformIO, so this firmware keeps that board target.
-
-## Architecture
-
-- `main.cpp`: startup, command processing orchestration, periodic status notification.
-- `ble_server.*`: NimBLE GATT server, characteristics, advertising lifecycle, RX queue dispatch.
-- `device_protocol.*`: JSON protocol, request validation, and BLE framing fragmentation/reassembly.
-- `device_state.*`: application state and simulated telemetry values.
-
-## BLE-only communication
-
-This firmware does not initialize Wi-Fi, does not start HTTP, and does not create SoftAP.
-
-## Build and flash
-
-```bash
-cd firmware
-pio run
-pio run --target upload
-pio device monitor
+```text
+firmware/
+├── data/                  # assets served by the ESP32 (HTML, CSS, JS)
+├── include/               # global definitions and configuration
+├── src/
+│   ├── comms/             # Wi‑Fi / Bluetooth / network control
+│   ├── sensors/           # BMP280 sensor read and aggregation logic
+│   ├── web/               # HTTP server and web page
+│   ├── config.h           # firmware configuration
+│   ├── main.cpp           # entry point
+│   └── app.cpp            # system orchestration
+├── platformio.ini         # PlatformIO project configuration
+└── README.md
 ```
 
-Optional device discovery:
+## Responsibilities
 
-```bash
-pio device list
+- Read one or more BMP280 sensors over I2C.
+- Expose an API or web page from the ESP32.
+- Allow mobile access over Wi‑Fi or Bluetooth.
+- Update values in the interface without reloading the page.
+
+## Recommended next steps
+
+1. Define the actual number of BMP280 sensors and their I2C addresses.
+2. Define the Wi‑Fi network topology for the ESP32.
+3. Implement the JSON API to send data to the browser.
+4. Add a reconnect flow and error handling for sensors and network.
+
+## Conceptual flow
+
+```text
+BMP280 -> Sensor Manager -> App State -> Web Server -> Browser
+                                |
+                                +--> Bluetooth / Wi‑Fi
 ```
-
-## Logs
-
-Serial monitor is configured at 115200 baud.
