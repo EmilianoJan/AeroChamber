@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <Adafruit_BMP280.h>
 #include <vector>
 
 namespace aerochamber {
@@ -22,6 +23,8 @@ class Bmp280Manager {
 
  private:
   std::vector<SensorSample> sensorSamples_;
+  std::vector<Adafruit_BMP280> sensors_;
+  bool sensorInitialized_ = false;
 };
 
 }  // namespace aerochamber

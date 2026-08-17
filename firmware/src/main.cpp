@@ -27,5 +27,5 @@ void loop() {
   webServer.update(bmp280Manager.readings());
   commsManager.update();
 
-  delay(250);
+  delay(100);
 }

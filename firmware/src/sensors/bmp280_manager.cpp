@@ -9,12 +9,22 @@ namespace aerochamber {
 void Bmp280Manager::begin() {
   sensorSamples_.clear();
   sensorSamples_.resize(kBmp280SensorCount);
+  sensors_.clear();
+  sensors_.resize(kBmp280SensorCount);
+  sensorInitialized_ = false;
 
   for (size_t i = 0; i < sensorSamples_.size(); ++i) {
     sensorSamples_[i].sensorId = static_cast<uint8_t>(i + 1);
   }
 
-  Serial.println("BMP280 manager initialized. Add sensor discovery and per-device I2C setup here.");
+  if (!sensors_.empty()) {
+    sensorInitialized_ = sensors_[0].begin(kBmp280BaseAddress);
+    if (sensorInitialized_) {
+      Serial.printf("BMP280 initialized on I2C address 0x%02X\n", kBmp280BaseAddress);
+    } else {
+      Serial.println("BMP280 initialization failed. Check wiring and I2C address.");
+    }
+  }
 }
 
 void Bmp280Manager::update() {
@@ -25,12 +35,19 @@ void Bmp280Manager::update() {
     sample.altitudeM = 0.0f;
   }
 
-  // TODO: Use a sensor array or one sensor per I2C address.
-  // This placeholder keeps the data model ready for the real implementation.
-  if (!sensorSamples_.empty()) {
-    sensorSamples_[0].valid = true;
-    sensorSamples_[0].temperatureC = 25.4f;
-    sensorSamples_[0].pressurePa = 101325.0f;
+  if (!sensorInitialized_ || sensors_.empty()) {
+    return;
+  }
+
+  sensorSamples_[0].valid = true;
+  sensorSamples_[0].temperatureC = sensors_[0].readTemperature();
+  sensorSamples_[0].pressurePa = sensors_[0].readPressure();
+  sensorSamples_[0].altitudeM = sensors_[0].readAltitude(101325.0f);
+
+  if (!std::isfinite(sensorSamples_[0].temperatureC) || !std::isfinite(sensorSamples_[0].pressurePa)) {
+    sensorSamples_[0].valid = false;
+    sensorSamples_[0].temperatureC = 0.0f;
+    sensorSamples_[0].pressurePa = 0.0f;
     sensorSamples_[0].altitudeM = 0.0f;
   }
 }
