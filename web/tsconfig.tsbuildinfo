@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/bluetooth/BleClient.ts","./src/bluetooth/bleTypes.ts","./src/bluetooth/protocol.ts","./src/components/ConnectionPanel.tsx","./src/components/DeviceControls.tsx","./src/components/DeviceStatus.tsx","./src/components/LogPanel.tsx","./src/hooks/useBluetooth.ts","./src/test/protocol.test.ts"],"version":"5.9.3"}
