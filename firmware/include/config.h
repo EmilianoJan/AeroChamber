@@ -10,7 +10,7 @@ constexpr uint8_t kWebServerPort = 80;
 constexpr uint32_t kSensorReadIntervalMs = 1000;
 constexpr uint32_t kWebRefreshIntervalMs = 500;
 
-constexpr char kWifiSsid[] = "AeroChamber-ESP32";
+constexpr char kWifiSsid[] = "AESP32";
 constexpr char kWifiPassword[] = "aerochamber123";
 constexpr char kBluetoothName[] = "AeroChamber";
 

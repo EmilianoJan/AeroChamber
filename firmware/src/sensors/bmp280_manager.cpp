@@ -1,5 +1,7 @@
 #include "sensors/bmp280_manager.h"
 
+#include "config.h"
+
 #include <Adafruit_BMP280.h>
 
 namespace aerochamber {

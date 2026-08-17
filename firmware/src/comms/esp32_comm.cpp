@@ -8,23 +8,29 @@
 namespace aerochamber {
 
 void Esp32CommManager::begin() {
-  WiFi.mode(WIFI_STA);
-  WiFi.setAutoReconnect(true);
+  WiFi.mode(WIFI_AP);
+  wifiStarted_ = WiFi.softAP(kWifiSsid, kWifiPassword);
+
+  if (wifiStarted_) {
+    Serial.print("Wi-Fi AP started. SSID: ");
+    Serial.println(kWifiSsid);
+    Serial.print("AP IP: ");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.println("Failed to start Wi-Fi AP.");
+  }
 
   // TODO: configure AP or station mode depending on the desired mobile UX.
-  Serial.println("Wi‑Fi + Bluetooth communication manager initialized.");
+  Serial.println("Wi-Fi + Bluetooth communication manager initialized.");
 }
 
 void Esp32CommManager::update() {
   if (!wifiStarted_) {
-    WiFi.begin(kWifiSsid, kWifiPassword);
-    wifiStarted_ = true;
-    Serial.println("Starting Wi‑Fi connection...");
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("Wi‑Fi connected: ");
-    Serial.println(WiFi.localIP());
+    wifiStarted_ = WiFi.softAP(kWifiSsid, kWifiPassword);
+    if (wifiStarted_) {
+      Serial.print("Wi-Fi AP restarted. AP IP: ");
+      Serial.println(WiFi.softAPIP());
+    }
   }
 
   if (!bluetoothStarted_) {
