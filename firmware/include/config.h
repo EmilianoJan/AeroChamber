@@ -4,7 +4,7 @@
 
 namespace aerochamber {
 
-constexpr uint8_t kBmp280SensorCount = 4;
+constexpr uint8_t kBmp280SensorCount = 2;
 constexpr uint8_t kBmp280BaseAddress = 0x76;
 constexpr uint8_t kWebServerPort = 80;
 constexpr uint32_t kSensorReadIntervalMs = 1000;

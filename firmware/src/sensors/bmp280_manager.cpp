@@ -24,6 +24,13 @@ void Bmp280Manager::begin() {
     } else {
       Serial.println("BMP280 initialization failed. Check wiring and I2C address.");
     }
+
+    sensorInitialized_ = sensors_[1].begin(kBmp280BaseAddress + 1);
+    if (sensorInitialized_) {
+      Serial.printf("BMP280 initialized on I2C address 0x%02X\n", (kBmp280BaseAddress+1));
+    } else {
+      Serial.println("BMP280 initialization failed. Check wiring and I2C address.");
+    }
   }
 }
 
@@ -49,6 +56,18 @@ void Bmp280Manager::update() {
     sensorSamples_[0].temperatureC = 0.0f;
     sensorSamples_[0].pressurePa = 0.0f;
     sensorSamples_[0].altitudeM = 0.0f;
+  }
+
+  sensorSamples_[1].valid = true;
+  sensorSamples_[1].temperatureC = sensors_[1].readTemperature();
+  sensorSamples_[1].pressurePa = sensors_[1].readPressure();
+  sensorSamples_[1].altitudeM = sensors_[1].readAltitude(101325.0f);
+
+  if (!std::isfinite(sensorSamples_[0].temperatureC) || !std::isfinite(sensorSamples_[1].pressurePa)) {
+    sensorSamples_[1].valid = false;
+    sensorSamples_[1].temperatureC = 0.0f;
+    sensorSamples_[1].pressurePa = 0.0f;
+    sensorSamples_[1].altitudeM = 0.0f;
   }
 }
 
