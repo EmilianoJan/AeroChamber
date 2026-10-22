@@ -14,6 +14,7 @@ void WebServerManager::begin() {
 
   server_.on("/", [this]() { handleRoot(); });
   server_.on("/api/sensors", [this]() { handleApi(); });
+  server_.onNotFound([this]() { handleStaticFile(); });
   server_.begin();
 
   Serial.println("Web server started on port 80");
@@ -33,6 +34,40 @@ void WebServerManager::handleRoot() {
   }
 
   server_.send(200, "text/plain", "AeroChamber web UI not found. Add /data/index.html");
+}
+
+void WebServerManager::handleStaticFile() {
+  String path = server_.uri();
+  if (path.endsWith("/")) {
+    path += "index.html";
+  }
+
+  File file = LittleFS.open(path, "r");
+  if (!file || file.isDirectory()) {
+    if (file) {
+      file.close();
+    }
+    server_.send(404, "text/plain", "Not found");
+    return;
+  }
+
+  String contentType = "application/octet-stream";
+  if (path.endsWith(".html")) {
+    contentType = "text/html";
+  } else if (path.endsWith(".js")) {
+    contentType = "application/javascript";
+  } else if (path.endsWith(".css")) {
+    contentType = "text/css";
+  } else if (path.endsWith(".json")) {
+    contentType = "application/json";
+  } else if (path.endsWith(".png")) {
+    contentType = "image/png";
+  } else if (path.endsWith(".svg")) {
+    contentType = "image/svg+xml";
+  }
+
+  server_.streamFile(file, contentType);
+  file.close();
 }
 
 void WebServerManager::handleApi() {

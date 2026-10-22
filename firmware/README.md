@@ -26,6 +26,26 @@ firmware/
 - Allow mobile access over Wi‑Fi or Bluetooth.
 - Update values in the interface without reloading the page.
 
+## Web dashboard (offline)
+
+The dashboard is served from LittleFS (`data/`). It needs no internet access: all libraries are bundled under `data/lib/`.
+
+- **Monitor**: absolute pressures for sensors 1 and 2, a software tare (zero) that uses sensor 2 as reference, and a constant to add to the corrected difference. Raw and difference plots support zoom, PNG, CSV and "add to report".
+- **Lapsos**: records the corrected difference of sensor 1 from the moment "Nuevo lapso" is pressed. Lapses can be compared with distinct colours or with faded historical series.
+- **Informe**: free-text report with plots snapshots, exported as PDF or Word (.docx).
+
+Notes:
+- Tare, constant, lapses and report are stored in the browser (`localStorage`) of the device that uses the page.
+- Native share needs HTTPS. Over the ESP32's plain HTTP the share buttons fall back to a file download.
+
+### Uploading the web assets
+
+After changing anything in `data/`, upload the filesystem before flashing or reloading:
+
+```bash
+pio run -t uploadfs
+```
+
 ## Recommended next steps
 
 1. Define the actual number of BMP280 sensors and their I2C addresses.

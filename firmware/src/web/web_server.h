@@ -19,6 +19,7 @@ class WebServerManager {
   std::vector<SensorSample> latestSensorSamples_;
   void handleRoot();
   void handleApi();
+  void handleStaticFile();
 };
 
 }  // namespace aerochamber
