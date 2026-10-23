@@ -405,10 +405,13 @@
     if (!d) {
       rawChart.render('raw', RAW_SERIES, emptyData(true, 2));
       diffChart.render('diff', DIFF_SERIES, emptyData(true, 1));
-      return;
+    } else {
+      rawChart.render('raw', RAW_SERIES, d.raw);
+      diffChart.render('diff', DIFF_SERIES, d.diff);
     }
-    rawChart.render('raw', RAW_SERIES, d.raw);
-    diffChart.render('diff', DIFF_SERIES, d.diff);
+    rawChart.resetZoom();
+    diffChart.resetZoom();
+    
   };
 
   const runsData = (visible) => {
@@ -441,6 +444,7 @@
     });
     const sig = ['runs', state.runMode, state.runMode === 'fade' ? newest : '', visible.map((r) => r.id).join(',')].join('|');
     runsChart.render(sig, cfgs, runsData(visible));
+    runsChart.resetZoom();
   };
 
   const flushRuns = () => {
