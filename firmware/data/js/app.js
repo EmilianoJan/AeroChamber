@@ -361,14 +361,14 @@
     if (!state.paused) {
       state.samples.push({ ts: now, p1, p2 });
       if (state.samples.length > MAX_SAMPLES) state.samples.splice(0, state.samples.length - MAX_SAMPLES);
-      state.dirtyMonitor = true;
+      renderMonitor();
     }
 
     const run = activeRun();
     if (run) {
       run.pts.push([round((now - run.start) / 1000, 3), round(p1, 2), round(p2, 2)]);
       state.runsDirty = true;
-      state.dirtyRuns = true;
+      renderRuns();
     }
   };
 

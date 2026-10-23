@@ -77,6 +77,7 @@ void WebServerManager::handleApi() {
   for (const auto& sample : latestSensorSamples_) {
     JsonObject item = sensors.add<JsonObject>();
     item["sensorId"] = sample.sensorId;
+    item["sequence"] = sample.sequence;
     item["temperatureC"] = sample.temperatureC;
     item["pressurePa"] = sample.pressurePa;
     item["altitudeM"] = sample.altitudeM;

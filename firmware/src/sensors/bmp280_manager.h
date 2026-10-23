@@ -8,9 +8,10 @@ namespace aerochamber {
 
 struct SensorSample {
   uint8_t sensorId = 0;
-  float temperatureC = 0.0f;
+  uint32_t sequence = 0;
+  float temperatureC = 0.1f;
   float pressurePa = 0.0f;
-  float altitudeM = 0.0f;
+  float altitudeM = 0.0f; 
   bool valid = false;
 };
 
@@ -25,6 +26,7 @@ class Bmp280Manager {
   std::vector<SensorSample> sensorSamples_;
   std::vector<Adafruit_BMP280> sensors_;
   bool sensorInitialized_ = false;
+  uint32_t measurementCount_ = 0;
 };
 
 }  // namespace aerochamber

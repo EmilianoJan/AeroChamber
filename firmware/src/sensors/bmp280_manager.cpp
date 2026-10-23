@@ -46,6 +46,11 @@ void Bmp280Manager::update() {
     return;
   }
 
+  ++measurementCount_;
+  for (auto& sample : sensorSamples_) {
+    sample.sequence = measurementCount_;
+  }
+
   sensorSamples_[0].valid = true;
   sensorSamples_[0].temperatureC = sensors_[0].readTemperature();
   sensorSamples_[0].pressurePa = sensors_[0].readPressure();
