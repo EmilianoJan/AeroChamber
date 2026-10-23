@@ -1,524 +1,613 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
     <title>AeroChamber</title>
     <style>
       :root {
+        color-scheme: dark;
         --bg: #0f172a;
-        --panel: #111827;
-        --panel-strong: #1f2937;
+        --panel: #1f2937;
         --line: #374151;
         --text: #f9fafb;
         --muted: #cbd5e1;
-        --positive: #34d399;
-        --warning: #fbbf24;
-        --accent: #60a5fa;
-        --danger: #f87171;
+        --blue: #60a5fa;
+        --green: #34d399;
+        --orange: #fbbf24;
+        --red: #f87171;
       }
-
       * { box-sizing: border-box; }
-
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
-        color: var(--text);
+        padding: max(.75rem, env(safe-area-inset-top)) .75rem max(1rem, env(safe-area-inset-bottom));
         min-height: 100vh;
-        padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.45 system-ui, sans-serif;
       }
-
-      .app {
-        max-width: 640px;
-        margin: 0 auto;
-      }
-
+      .app { width: min(100%, 820px); margin: auto; }
       .card {
-        background: rgba(31, 41, 55, 0.96);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        border-radius: 16px;
+        margin-bottom: .85rem;
         padding: 1rem;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.4);
-        margin-bottom: 1rem;
-      }
-
-      h1 {
-        margin: 0 0 0.75rem;
-        font-size: clamp(1.7rem, 5vw, 2.4rem);
-        letter-spacing: 0.04em;
-      }
-
-      .sensor-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.65rem;
-        margin-top: 0.5rem;
-      }
-
-      .row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 0.75rem;
-        align-items: center;
-        padding: 0.7rem 0.75rem;
-        background: rgba(17, 24, 39, 0.75);
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 14px;
+        background: var(--panel);
       }
-
-      .sensor-label {
-        font-weight: 700;
+      h1 { margin: 0; font-size: 1.65rem; }
+      h2 { margin: 0 0 .75rem; font-size: 1.15rem; }
+      p { margin: .4rem 0 .8rem; color: var(--muted); }
+      .sensor-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin-top: .85rem; }
+      .sensor, .metric { padding: .7rem; border: 1px solid var(--line); border-radius: 10px; background: #111827; }
+      .sensor strong, .metric strong { display: block; }
+      .sensor span, .metric span { color: var(--muted); font-size: .9rem; }
+      .status { min-height: 1.4rem; margin-top: .7rem; color: var(--green); font-size: .9rem; }
+      .toolbar { display: flex; flex-wrap: wrap; gap: .55rem; }
+      button, input {
+        min-height: 2.8rem;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        font: inherit;
       }
-
-      .sensor-values {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        text-align: right;
-        gap: 0.15rem;
-        font-size: 0.95rem;
-      }
-
-      .status {
-        margin-top: 1rem;
-        font-weight: bold;
-        color: var(--positive);
-      }
-
-      .history-panel {
-        margin-top: 1rem;
-      }
-
-      .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-bottom: 0.85rem;
-      }
-
-      button {
-        flex: 1 1 120px;
-        min-height: 2.6rem;
-        border: 0;
-        border-radius: 10px;
-        background: #2563eb;
-        color: white;
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 0.15s ease, opacity 0.2s ease;
-      }
-
-      button:active { transform: scale(0.98); }
+      button { flex: 1 1 145px; padding: .55rem .8rem; background: #2563eb; color: white; font-weight: 700; cursor: pointer; }
       button.secondary { background: #374151; }
       button.warning { background: #b45309; }
-      button.danger { background: #b91c1c; }
-
-      .sensor-selector {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.55rem;
-        margin-bottom: 0.8rem;
-      }
-
-      .sensor-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        background: rgba(17, 24, 39, 0.8);
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: 0.4rem 0.7rem;
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      .sensor-toggle input {
-        accent-color: var(--accent);
-        width: 1rem;
-        height: 1rem;
-      }
-
-      .chart-wrap {
-        position: relative;
-        height: 260px;
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        overflow: hidden;
-      }
-
-      canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-      }
-
-      .empty-state {
-        color: var(--muted);
-        padding: 1rem;
-        text-align: center;
-      }
-
-      @media (min-width: 700px) {
-        .app { max-width: 820px; }
+      button:disabled { opacity: .5; cursor: not-allowed; }
+      input { width: 100%; padding: .5rem .65rem; border-color: var(--line); background: #111827; color: var(--text); }
+      label { display: block; margin: .35rem 0; color: var(--muted); font-size: .92rem; }
+      .calibration-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .7rem; align-items: end; }
+      .metric strong { font-size: 1.25rem; }
+      .chart-wrap { position: relative; height: 270px; margin-top: .8rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0b1220; }
+      canvas { display: block; width: 100%; height: 100%; }
+      .legend { display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-top: .55rem; color: var(--muted); font-size: .85rem; }
+      .legend-item { display: inline-flex; align-items: center; gap: .35rem; }
+      .swatch { width: .75rem; height: .75rem; border-radius: 50%; }
+      .run-list { display: grid; gap: .35rem; margin-top: .65rem; }
+      .run-item { display: flex; justify-content: space-between; gap: .5rem; padding: .5rem .65rem; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: .85rem; }
+      .run-item button { flex: 0 0 auto; min-height: 2rem; padding: .2rem .55rem; }
+      @media (max-width: 420px) {
+        .card { padding: .8rem; }
+        .sensor-list { grid-template-columns: 1fr; }
+        .calibration-grid { grid-template-columns: 1fr; }
+        .chart-wrap { height: 250px; }
+        button { flex-basis: 130px; }
       }
     </style>
   </head>
   <body>
-    <div class="app">
-      <div class="card">
+    <main class="app">
+      <section class="card">
         <h1>AeroChamber</h1>
         <div id="sensor-list" class="sensor-list"></div>
-        <div class="status" id="status">Connecting...</div>
-      </div>
+        <div id="status" class="status" role="status" aria-live="polite">Conectando con los sensores...</div>
+      </section>
 
-      <div class="card history-panel">
+      <section class="card">
+        <h2>Tarado diferencial</h2>
+        <p>Se calcula P1 − P2. El tarado captura la diferencia actual como cero; el ajuste en Pa se suma al resultado.</p>
+        <div class="calibration-grid">
+          <div>
+            <label for="offset-input">Constante adicional (Pa)</label>
+            <input id="offset-input" type="number" step="any" inputmode="decimal" value="0" />
+          </div>
+          <div class="metric"><span>Diferencia corregida</span><strong id="corrected-value">-- Pa</strong></div>
+        </div>
+        <div class="toolbar" style="margin-top:.7rem">
+          <button id="zero-btn" type="button">Establecer cero ahora</button>
+          <button id="clear-zero-btn" class="secondary" type="button">Quitar tarado</button>
+        </div>
+        <div id="zero-status" class="status">Sin tarado: se muestra P1 − P2.</div>
+      </section>
+
+      <section class="card">
+        <h2>Presiones en tiempo real</h2>
+        <p>Marcas de fecha y hora. Se muestra cada muestra recibida.</p>
         <div class="toolbar">
-          <button id="stop-btn" class="secondary" type="button">Stop</button>
-          <button id="start-btn" type="button">Start</button>
-          <button id="reset-btn" class="warning" type="button">Reset</button>
-          <button id="share-plot-btn" class="secondary" type="button">Share plot</button>
-          <button id="share-data-btn" class="danger" type="button">Share data</button>
+          <button id="share-pressure-btn" class="secondary" type="button">Compartir gráfico</button>
+          <button id="export-csv-btn" class="secondary" type="button">Exportar CSV</button>
         </div>
+        <div class="chart-wrap"><canvas id="pressure-chart" aria-label="Gráfico de presión frente a fecha y hora"></canvas></div>
+        <div id="pressure-legend" class="legend"></div>
+      </section>
 
-        <div id="sensor-selector" class="sensor-selector"></div>
-
-        <div class="chart-wrap">
-          <canvas id="history-chart" width="600" height="260"></canvas>
+      <section class="card">
+        <h2>Diferencia corregida en vivo</h2>
+        <div class="toolbar">
+          <button id="share-difference-btn" class="secondary" type="button">Compartir gráfico</button>
         </div>
-      </div>
-    </div>
+        <div class="chart-wrap"><canvas id="difference-chart" aria-label="Gráfico de diferencia de presión frente a fecha y hora"></canvas></div>
+      </section>
+
+      <section class="card">
+        <h2>Comparar lapses</h2>
+        <p>Inicia un lapse para registrar P1 − P2 corregida. Al finalizar queda guardado en este dispositivo y puede compararse con las corridas anteriores.</p>
+        <div class="toolbar">
+          <button id="lapse-btn" type="button">Iniciar lapse</button>
+          <button id="reset-lapse-btn" class="warning" type="button">Resetear lapse actual</button>
+          <button id="share-lapses-btn" class="secondary" type="button">Compartir gráfico</button>
+          <button id="export-lapses-btn" class="secondary" type="button">Exportar lapses CSV</button>
+        </div>
+        <div id="lapse-status" class="status">Ningún lapse en curso.</div>
+        <div class="chart-wrap"><canvas id="lapse-chart" aria-label="Comparación de lapses en segundos"></canvas></div>
+        <div id="run-list" class="run-list"></div>
+      </section>
+    </main>
 
     <script>
-      const state = {
-        historyRunning: true,
-        history: {},
-        selectedSensors: new Set(),
-        maxPoints: 180,
-        sensorIds: [],
-        selectorInitialized: false
-      };
+      (() => {
+        'use strict';
 
-      const sensorList = document.getElementById('sensor-list');
-      const sensorSelector = document.getElementById('sensor-selector');
-      const chart = document.getElementById('history-chart');
-      const ctx = chart.getContext('2d');
+        const STORAGE_KEY = 'aerochamber-lapses-v1';
+        const CALIBRATION_KEY = 'aerochamber-calibration-v1';
+        const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185', '#22d3ee', '#c084fc'];
+        const state = {
+          pressure: [],
+          difference: [],
+          runs: [],
+          currentRun: null,
+          zeroOffsetPa: null,
+          additionalOffsetPa: 0,
+          lastSampleMs: null,
+          clockOffsetMs: null,
+          lastValues: null,
+          requestInProgress: false
+        };
+        const $ = (id) => document.getElementById(id);
+        const canvases = {
+          pressure: $('pressure-chart'),
+          difference: $('difference-chart'),
+          lapses: $('lapse-chart')
+        };
 
-      const sensorColors = {
-        1: '#60a5fa',
-        2: '#34d399',
-        3: '#fbbf24',
-        4: '#f472b6',
-        5: '#a78bfa',
-        6: '#f87171'
-      };
-
-      function updateStatus(message, isError = false) {
-        const status = document.getElementById('status');
-        status.textContent = message;
-        status.style.color = isError ? '#f87171' : '#34d399';
-      }
-
-      function renderSensorList(sensors) {
-        sensorList.innerHTML = '';
-
-        if (!Array.isArray(sensors) || sensors.length === 0) {
-          sensorList.innerHTML = '<div class="row"><span>No sensors</span></div>';
-          return;
+        function setStatus(message, isError = false, target = 'status') {
+          const element = $(target);
+          element.textContent = message;
+          element.style.color = isError ? '#f87171' : '#34d399';
         }
 
-        sensors.forEach((sensor) => {
-          const row = document.createElement('div');
-          row.className = 'row';
-
-          const label = document.createElement('span');
-          label.className = 'sensor-label';
-          label.textContent = `Sensor ${sensor.sensorId}`;
-
-          const values = document.createElement('div');
-          values.className = 'sensor-values';
-          if (sensor.valid) {
-            values.innerHTML = `
-              <span>${Number(sensor.temperatureC ?? 0).toFixed(2)} °C</span>
-              <span>${Number(sensor.pressurePa ?? 0).toFixed(2)} Pa</span>
-            `;
-          } else {
-            values.innerHTML = '<span>No data</span><span>--</span>';
+        function loadLocalState() {
+          try {
+            const savedRuns = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            state.runs = Array.isArray(savedRuns) ? savedRuns.filter((run) => Array.isArray(run.points)) : [];
+            const calibration = JSON.parse(localStorage.getItem(CALIBRATION_KEY) || '{}');
+            state.zeroOffsetPa = Number.isFinite(calibration.zeroOffsetPa) ? calibration.zeroOffsetPa : null;
+            state.additionalOffsetPa = Number.isFinite(calibration.additionalOffsetPa) ? calibration.additionalOffsetPa : 0;
+            $('offset-input').value = String(state.additionalOffsetPa);
+          } catch (error) {
+            setStatus('No se pudieron leer los datos guardados localmente.', true);
+            state.runs = [];
           }
-
-          row.appendChild(label);
-          row.appendChild(values);
-          sensorList.appendChild(row);
-        });
-      }
-
-      function renderSensorSelector(sensors) {
-        sensorSelector.innerHTML = '';
-        state.sensorIds = sensors.map((sensor) => Number(sensor.sensorId));
-
-        if (state.sensorIds.length === 0) {
-          return;
+          updateZeroStatus();
+          renderRuns();
         }
 
-        if (!state.selectorInitialized) {
-          state.sensorIds.forEach((sensorId) => state.selectedSensors.add(sensorId));
-          state.selectorInitialized = true;
+        function saveCalibration() {
+          try {
+            localStorage.setItem(CALIBRATION_KEY, JSON.stringify({
+              zeroOffsetPa: state.zeroOffsetPa,
+              additionalOffsetPa: state.additionalOffsetPa
+            }));
+          } catch (error) {
+            setStatus('No se pudo guardar el tarado en este dispositivo.', true);
+          }
         }
 
-        const activeSelections = new Set(
-          Array.from(state.selectedSensors).filter((sensorId) => state.sensorIds.includes(sensorId))
-        );
-        state.selectedSensors.clear();
-        activeSelections.forEach((sensorId) => state.selectedSensors.add(sensorId));
+        function updateZeroStatus() {
+          $('zero-status').textContent = state.zeroOffsetPa === null
+            ? 'Sin tarado: se muestra P1 − P2.'
+            : `Tarado aplicado: se resta ${state.zeroOffsetPa.toFixed(2)} Pa de P1 − P2.`;
+        }
 
-        state.sensorIds.forEach((sensorId) => {
-          const label = document.createElement('label');
-          label.className = 'sensor-toggle';
+        function toDate(sampleMs) {
+          if (state.clockOffsetMs === null) state.clockOffsetMs = Date.now() - sampleMs;
+          return new Date(sampleMs + state.clockOffsetMs);
+        }
 
-          const input = document.createElement('input');
-          input.type = 'checkbox';
-          input.checked = state.selectedSensors.has(sensorId);
-          input.addEventListener('change', (event) => {
-            if (event.target.checked) {
-              state.selectedSensors.add(sensorId);
-            } else {
-              state.selectedSensors.delete(sensorId);
-            }
-            renderHistoryChart();
+        function renderSensors(sensors) {
+          const list = $('sensor-list');
+          list.replaceChildren();
+          sensors.forEach((sensor) => {
+            const item = document.createElement('div');
+            item.className = 'sensor';
+            const title = document.createElement('strong');
+            title.textContent = `Sensor ${sensor.sensorId}`;
+            const pressure = document.createElement('span');
+            pressure.textContent = sensor.valid ? `${Number(sensor.pressurePa).toFixed(2)} Pa` : 'Sin lectura';
+            const temperature = document.createElement('span');
+            temperature.textContent = sensor.valid ? `${Number(sensor.temperatureC).toFixed(2)} °C` : '';
+            item.append(title, pressure, temperature);
+            list.appendChild(item);
           });
-
-          const text = document.createElement('span');
-          text.textContent = `Sensor ${sensorId}`;
-
-          label.appendChild(input);
-          label.appendChild(text);
-          sensorSelector.appendChild(label);
-        });
-      }
-
-      function recordHistory(samples) {
-        if (!state.historyRunning) {
-          return;
+          if (sensors.length === 0) {
+            list.textContent = 'No se detectaron sensores.';
+          }
         }
 
-        samples.forEach((sensor) => {
-          const sensorId = Number(sensor.sensorId);
-          const pressurePa = Number(sensor.pressurePa ?? 0);
-
-          if (!sensor.valid || !Number.isFinite(pressurePa)) {
-            return;
-          }
-
-          if (!state.history[sensorId]) {
-            state.history[sensorId] = [];
-          }
-
-          const timestamp = Date.now();
-          state.history[sensorId].push({ timestamp, pressurePa });
-
-          if (state.history[sensorId].length > state.maxPoints) {
-            state.history[sensorId].shift();
-          }
-        });
-
-        renderHistoryChart();
-      }
-
-      function drawGrid(width, height, padding) {
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
-        ctx.lineWidth = 1;
-
-        for (let i = 0; i <= 5; i += 1) {
-          const y = padding.top + ((height - padding.top - padding.bottom) / 5) * i;
-          ctx.beginPath();
-          ctx.moveTo(padding.left, y);
-          ctx.lineTo(width - padding.right, y);
-          ctx.stroke();
+        function correctedDifference(rawDifference) {
+          return rawDifference - (state.zeroOffsetPa ?? 0) + state.additionalOffsetPa;
         }
 
-        for (let i = 0; i <= 5; i += 1) {
-          const x = padding.left + ((width - padding.left - padding.right) / 5) * i;
-          ctx.beginPath();
-          ctx.moveTo(x, padding.top);
-          ctx.lineTo(x, height - padding.bottom);
-          ctx.stroke();
-        }
-      }
-
-      function renderHistoryChart() {
-        const width = chart.width;
-        const height = chart.height;
-        const padding = { top: 20, right: 20, bottom: 30, left: 48 };
-
-        ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, width, height);
-
-        const selectedIds = Array.from(state.selectedSensors).filter((sensorId) => state.history[sensorId]?.length);
-
-        if (selectedIds.length === 0) {
-          ctx.fillStyle = '#cbd5e1';
-          ctx.font = '16px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText('No pressure history available', width / 2, height / 2);
-          return;
-        }
-
-        const values = selectedIds.flatMap((sensorId) => state.history[sensorId].map((point) => point.pressurePa));
-        const minValue = Math.min(...values);
-        const maxValue = Math.max(...values);
-        const range = Math.max(maxValue - minValue, 1);
-
-        drawGrid(width, height, padding);
-
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${maxValue.toFixed(0)}`, padding.left - 8, padding.top + 4);
-        ctx.fillText(`${((maxValue + minValue) / 2).toFixed(0)}`, padding.left - 8, height / 2);
-        ctx.fillText(`${minValue.toFixed(0)}`, padding.left - 8, height - padding.bottom + 4);
-
-        ctx.textAlign = 'center';
-        ctx.fillText('Time', width / 2, height - 8);
-
-        selectedIds.forEach((sensorId) => {
-          const points = state.history[sensorId];
-          const color = sensorColors[sensorId] || '#60a5fa';
-          ctx.beginPath();
-
-          points.forEach((point, index) => {
-            const x = padding.left + (index / Math.max(points.length - 1, 1)) * (width - padding.left - padding.right);
-            const normalized = (point.pressurePa - minValue) / range;
-            const y = height - padding.bottom - normalized * (height - padding.top - padding.bottom);
-
-            if (index === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          });
-
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2.2;
-          ctx.stroke();
-
-          const lastPoint = points[points.length - 1];
-          const lastX = padding.left + (points.length - 1) / Math.max(points.length - 1, 1) * (width - padding.left - padding.right);
-          const normalizedLast = (lastPoint.pressurePa - minValue) / range;
-          const lastY = height - padding.bottom - normalizedLast * (height - padding.top - padding.bottom);
-
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      }
-
-      function handleStart() {
-        state.historyRunning = true;
-        document.getElementById('start-btn').disabled = true;
-        document.getElementById('stop-btn').disabled = false;
-      }
-
-      function handleStop() {
-        state.historyRunning = false;
-        document.getElementById('start-btn').disabled = false;
-        document.getElementById('stop-btn').disabled = true;
-      }
-
-      function handleReset() {
-        state.history = {};
-        renderHistoryChart();
-      }
-
-      async function sharePlot() {
-        try {
-          const dataUrl = chart.toDataURL('image/png');
-          if (navigator.share) {
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            const file = new File([blob], 'aerochamber-plot.png', { type: 'image/png' });
-            await navigator.share({
-              title: 'AeroChamber plot',
-              text: 'Pressure history plot',
-              files: [file]
-            });
-            return;
-          }
-
-          const link = document.createElement('a');
-          link.download = 'aerochamber-plot.png';
-          link.href = dataUrl;
-          link.click();
-        } catch (error) {
-          updateStatus('Could not share plot', true);
-        }
-      }
-
-      async function shareData() {
-        try {
-          const selected = Array.from(state.selectedSensors);
-          const payload = JSON.stringify({
-            generatedAt: new Date().toISOString(),
-            sensors: selected.map((sensorId) => ({
-              sensorId,
-              points: state.history[sensorId] || []
-            }))
-          }, null, 2);
-
-          if (navigator.share) {
-            await navigator.share({
-              title: 'AeroChamber data',
-              text: payload
-            });
-            return;
-          }
-
-          if (navigator.clipboard) {
-            await navigator.clipboard.writeText(payload);
-            updateStatus('Pressure data copied to clipboard');
-            return;
-          }
-
-          const blob = new Blob([payload], { type: 'application/json' });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = 'aerochamber-data.json';
-          link.click();
-          URL.revokeObjectURL(link.href);
-        } catch (error) {
-          updateStatus('Could not share data', true);
-        }
-      }
-
-      async function loadSensors() {
-        try {
-          const response = await fetch('/api/sensors');
-          const data = await response.json();
+        function recordSample(data) {
+          const timestampMs = Number(data.timestampMs);
+          if (!Number.isFinite(timestampMs) || timestampMs === state.lastSampleMs) return;
           const sensors = Array.isArray(data.sensors) ? data.sensors : [];
+          const first = sensors.find((sensor) => Number(sensor.sensorId) === 1 && sensor.valid);
+          const second = sensors.find((sensor) => Number(sensor.sensorId) === 2 && sensor.valid);
+          state.lastSampleMs = timestampMs;
+          state.lastValues = null;
+          const timestamp = toDate(timestampMs).toISOString();
+          const p1 = first ? Number(first.pressurePa) : null;
+          const p2 = second ? Number(second.pressurePa) : null;
+          const hasP1 = Number.isFinite(p1);
+          const hasP2 = Number.isFinite(p2);
+          if (!hasP1 && !hasP2) return;
 
-          renderSensorList(sensors);
-          renderSensorSelector(sensors);
-          recordHistory(sensors);
-          updateStatus('Data refreshed');
-        } catch (error) {
-          updateStatus('Connection error', true);
+          const pressurePoint = {
+            timestamp,
+            sensor1Pa: hasP1 ? p1 : null,
+            sensor2Pa: hasP2 ? p2 : null
+          };
+          state.pressure.push(pressurePoint);
+          if (!hasP1 || !hasP2) return;
+
+          const rawDifferencePa = p1 - p2;
+          const point = {
+            ...pressurePoint,
+            rawDifferencePa,
+            correctedDifferencePa: correctedDifference(rawDifferencePa)
+          };
+          state.lastValues = point;
+          state.difference.push({ timestamp, rawDifferencePa });
+
+          if (state.currentRun) {
+            const elapsedSeconds = Math.max(0, (Date.parse(timestamp) - state.currentRun.startedAtMs) / 1000);
+            state.currentRun.points.push({ elapsedSeconds, correctedDifferencePa: point.correctedDifferencePa, timestamp });
+          }
         }
-      }
 
-      document.getElementById('stop-btn').addEventListener('click', handleStop);
-      document.getElementById('start-btn').addEventListener('click', handleStart);
-      document.getElementById('reset-btn').addEventListener('click', handleReset);
-      document.getElementById('share-plot-btn').addEventListener('click', sharePlot);
-      document.getElementById('share-data-btn').addEventListener('click', shareData);
+        function drawChart(canvas, series, options) {
+          const rect = canvas.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const dpr = Math.max(1, window.devicePixelRatio || 1);
+          const width = Math.round(rect.width * dpr);
+          const height = Math.round(rect.height * dpr);
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+          }
+          const context = canvas.getContext('2d');
+          context.setTransform(dpr, 0, 0, dpr, 0, 0);
+          const w = rect.width;
+          const h = rect.height;
+          const pad = { left: 58, right: 12, top: 16, bottom: 48 };
+          const plotWidth = Math.max(1, w - pad.left - pad.right);
+          const plotHeight = Math.max(1, h - pad.top - pad.bottom);
+          context.clearRect(0, 0, w, h);
+          context.fillStyle = '#0b1220';
+          context.fillRect(0, 0, w, h);
 
-      document.getElementById('start-btn').disabled = true;
-      document.getElementById('stop-btn').disabled = false;
+          const points = series.flatMap((line) => line.points);
+          context.font = '11px system-ui, sans-serif';
+          context.lineWidth = 1;
+          if (!points.length) {
+            context.fillStyle = '#cbd5e1';
+            context.textAlign = 'center';
+            context.fillText(options.emptyText || 'Esperando datos…', w / 2, h / 2);
+            return;
+          }
 
-      setInterval(loadSensors, 200);
-      loadSensors();
-      renderHistoryChart();
+          const xs = points.map((point) => point.x);
+          const ys = points.map((point) => point.y);
+          let minX = Infinity;
+          let maxX = -Infinity;
+          let minY = Infinity;
+          let maxY = -Infinity;
+          points.forEach((point) => {
+            minX = Math.min(minX, point.x);
+            maxX = Math.max(maxX, point.x);
+            minY = Math.min(minY, point.y);
+            maxY = Math.max(maxY, point.y);
+          });
+          if (minX === maxX) { minX -= 1; maxX += 1; }
+          if (minY === maxY) { minY -= Math.max(Math.abs(minY) * .01, 1); maxY += Math.max(Math.abs(maxY) * .01, 1); }
+          const yPad = (maxY - minY) * .08;
+          minY -= yPad;
+          maxY += yPad;
+
+          const xAt = (value) => pad.left + ((value - minX) / (maxX - minX)) * plotWidth;
+          const yAt = (value) => pad.top + ((maxY - value) / (maxY - minY)) * plotHeight;
+          context.strokeStyle = 'rgba(148, 163, 184, .22)';
+          context.fillStyle = '#cbd5e1';
+          context.textAlign = 'right';
+          for (let index = 0; index <= 4; index += 1) {
+            const ratio = index / 4;
+            const y = pad.top + ratio * plotHeight;
+            const value = maxY - ratio * (maxY - minY);
+            context.beginPath(); context.moveTo(pad.left, y); context.lineTo(w - pad.right, y); context.stroke();
+            context.fillText(value.toFixed(1), pad.left - 7, y + 4);
+          }
+          for (let index = 0; index <= 4; index += 1) {
+            const ratio = index / 4;
+            const x = pad.left + ratio * plotWidth;
+            context.beginPath(); context.moveTo(x, pad.top); context.lineTo(x, h - pad.bottom); context.stroke();
+            const value = minX + ratio * (maxX - minX);
+            const label = options.formatX(value);
+            context.textAlign = index === 0 ? 'left' : index === 4 ? 'right' : 'center';
+            context.fillText(label, x, h - pad.bottom + 16);
+          }
+
+          context.save();
+          context.translate(14, pad.top + plotHeight / 2);
+          context.rotate(-Math.PI / 2);
+          context.textAlign = 'center';
+          context.fillStyle = '#f9fafb';
+          context.fillText(options.yLabel || 'Presión (Pa)', 0, 0);
+          context.restore();
+          context.textAlign = 'center';
+          context.fillStyle = '#f9fafb';
+          context.fillText(options.xLabel || 'Fecha y hora', pad.left + plotWidth / 2, h - 5);
+
+          series.forEach((line) => {
+            if (!line.points.length) return;
+            context.beginPath();
+            line.points.forEach((point, index) => {
+              const x = xAt(point.x);
+              const y = yAt(point.y);
+              if (index === 0) context.moveTo(x, y); else context.lineTo(x, y);
+            });
+            context.strokeStyle = line.color;
+            context.globalAlpha = line.alpha ?? 1;
+            context.lineWidth = 2;
+            context.stroke();
+            line.points.forEach((point) => {
+              context.beginPath();
+              context.arc(xAt(point.x), yAt(point.y), 2.5, 0, 2 * Math.PI);
+              context.fillStyle = line.color;
+              context.fill();
+            });
+            context.globalAlpha = 1;
+          });
+        }
+
+        function renderCharts() {
+          drawChart(canvases.pressure, [
+            { color: colors[0], points: state.pressure.filter((point) => Number.isFinite(point.sensor1Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor1Pa })) },
+            { color: colors[1], points: state.pressure.filter((point) => Number.isFinite(point.sensor2Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor2Pa })) }
+          ], {
+            formatX: (value) => new Date(value).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            xLabel: 'Fecha y hora',
+            yLabel: 'Presión (Pa)'
+          });
+          drawChart(canvases.difference, [{
+            color: colors[2],
+            points: state.difference.map((point) => ({ x: Date.parse(point.timestamp), y: correctedDifference(point.rawDifferencePa) }))
+          }], {
+            formatX: (value) => new Date(value).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            xLabel: 'Fecha y hora',
+            yLabel: 'Diferencia (Pa)'
+          });
+          const runSeries = state.runs.map((run, index) => ({
+            color: colors[index % colors.length],
+            alpha: .42,
+            points: run.points.map((point) => ({ x: point.elapsedSeconds, y: point.correctedDifferencePa }))
+          }));
+          if (state.currentRun) {
+            runSeries.push({
+              color: colors[state.runs.length % colors.length],
+              points: state.currentRun.points.map((point) => ({ x: point.elapsedSeconds, y: point.correctedDifferencePa }))
+            });
+          }
+          drawChart(canvases.lapses, runSeries, {
+            formatX: (value) => `${value.toFixed(1)} s`,
+            xLabel: 'Tiempo desde inicio (s)',
+            yLabel: 'Diferencia (Pa)',
+            emptyText: 'Inicia un lapse para registrar datos'
+          });
+        }
+
+        function renderLegends() {
+          const legend = $('pressure-legend');
+          legend.replaceChildren();
+          [['Sensor 1', colors[0]], ['Sensor 2', colors[1]]].forEach(([label, color]) => {
+            const item = document.createElement('span');
+            item.className = 'legend-item';
+            const swatch = document.createElement('span');
+            swatch.className = 'swatch';
+            swatch.style.backgroundColor = color;
+            item.append(swatch, document.createTextNode(label));
+            legend.appendChild(item);
+          });
+        }
+
+        function renderRuns() {
+          const list = $('run-list');
+          list.replaceChildren();
+          state.runs.forEach((run, index) => {
+            const row = document.createElement('div');
+            row.className = 'run-item';
+            const label = document.createElement('span');
+            const date = new Date(run.startedAtMs).toLocaleString();
+            label.textContent = `${run.name} · ${date} · ${run.points.length} puntos`;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'secondary';
+            remove.textContent = 'Eliminar';
+            remove.setAttribute('aria-label', `Eliminar ${run.name}`);
+            remove.addEventListener('click', () => {
+              state.runs.splice(index, 1);
+              persistRuns();
+            });
+            row.append(label, remove);
+            list.appendChild(row);
+          });
+        }
+
+        function persistRuns() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.runs));
+            renderRuns();
+            renderCharts();
+          } catch (error) {
+            setStatus('No se pudieron guardar los lapses: almacenamiento local lleno o no disponible.', true);
+          }
+        }
+
+        function toggleLapse() {
+          if (!state.currentRun) {
+            state.currentRun = {
+              name: `Lapse ${state.runs.length + 1}`,
+              startedAtMs: Date.now(),
+              points: []
+            };
+            $('lapse-btn').textContent = 'Finalizar y guardar lapse';
+            setStatus('Lapse en curso: esperando muestras válidas.', false, 'lapse-status');
+            renderCharts();
+            return;
+          }
+          if (state.currentRun.points.length === 0) {
+            setStatus('El lapse no contiene muestras y no se guardó.', true, 'lapse-status');
+            return;
+          }
+          state.runs.push(state.currentRun);
+          state.currentRun = null;
+          $('lapse-btn').textContent = 'Iniciar lapse';
+          setStatus('Lapse guardado en este dispositivo.', false, 'lapse-status');
+          persistRuns();
+        }
+
+        function resetCurrentLapse() {
+          state.currentRun = null;
+          $('lapse-btn').textContent = 'Iniciar lapse';
+          setStatus('Lapse actual reseteado. Las corridas guardadas se conservaron.', false, 'lapse-status');
+          renderCharts();
+        }
+
+        function exportCsv() {
+          const rows = [['fecha_hora', 'sensor1_Pa', 'sensor2_Pa', 'diferencia_bruta_Pa', 'diferencia_corregida_Pa']];
+          state.pressure.forEach((point) => rows.push([
+            point.timestamp,
+            point.sensor1Pa,
+            point.sensor2Pa,
+            point.rawDifferencePa,
+            correctedDifference(point.rawDifferencePa)
+          ]));
+          downloadCsv('aerochamber-presiones.csv', rows);
+        }
+
+        function exportLapsesCsv() {
+          const rows = [['lapse', 'fecha_hora', 'tiempo_desde_inicio_s', 'diferencia_corregida_Pa']];
+          const runs = state.currentRun ? [...state.runs, state.currentRun] : state.runs;
+          runs.forEach((run) => run.points.forEach((point) => rows.push([
+            run.name,
+            point.timestamp,
+            point.elapsedSeconds,
+            point.correctedDifferencePa
+          ])));
+          downloadCsv('aerochamber-lapses.csv', rows);
+        }
+
+        function downloadCsv(filename, rows) {
+          const csv = rows.map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')).join('\r\n');
+          const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+
+        async function shareChart(canvas, filename, title) {
+          try {
+            const blob = await new Promise((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error('No se pudo generar la imagen.')), 'image/png'));
+            const file = new File([blob], filename, { type: 'image/png' });
+            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+              await navigator.share({ title, files: [file] });
+            } else {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = filename;
+              link.click();
+              URL.revokeObjectURL(url);
+            }
+          } catch (error) {
+            if (error.name !== 'AbortError') setStatus('No se pudo compartir el gráfico.', true);
+          }
+        }
+
+        async function loadSensors() {
+          if (state.requestInProgress) return;
+          state.requestInProgress = true;
+          try {
+            const response = await fetch('/api/sensors', { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const sensors = Array.isArray(data.sensors) ? data.sensors : [];
+            renderSensors(sensors);
+            recordSample(data);
+            $('corrected-value').textContent = state.lastValues
+              ? `${state.lastValues.correctedDifferencePa.toFixed(2)} Pa`
+              : '-- Pa';
+            setStatus('Lecturas actualizadas.');
+            renderCharts();
+            if (state.currentRun) {
+              const count = state.currentRun.points.length;
+              setStatus(`Lapse en curso: ${count} muestras.`, false, 'lapse-status');
+            }
+          } catch (error) {
+            setStatus(`Error de conexión: ${error.message}`, true);
+          } finally {
+            state.requestInProgress = false;
+          }
+        }
+
+        $('offset-input').addEventListener('change', (event) => {
+          const value = Number(event.target.value);
+          if (!Number.isFinite(value)) {
+            setStatus('La constante debe ser un número válido.', true);
+            event.target.value = String(state.additionalOffsetPa);
+            return;
+          }
+          state.additionalOffsetPa = value;
+          saveCalibration();
+          if (state.lastValues) $('corrected-value').textContent = `${correctedDifference(state.lastValues.rawDifferencePa).toFixed(2)} Pa`;
+          renderCharts();
+        });
+        $('zero-btn').addEventListener('click', () => {
+          if (!state.lastValues) {
+            setStatus('Se necesitan lecturas válidas de ambos sensores para establecer el cero.', true, 'zero-status');
+            return;
+          }
+          state.zeroOffsetPa = state.lastValues.rawDifferencePa;
+          saveCalibration();
+          updateZeroStatus();
+          if (state.lastValues) $('corrected-value').textContent = `${correctedDifference(state.lastValues.rawDifferencePa).toFixed(2)} Pa`;
+          renderCharts();
+        });
+        $('clear-zero-btn').addEventListener('click', () => {
+          state.zeroOffsetPa = null;
+          saveCalibration();
+          updateZeroStatus();
+          if (state.lastValues) $('corrected-value').textContent = `${correctedDifference(state.lastValues.rawDifferencePa).toFixed(2)} Pa`;
+          renderCharts();
+        });
+        $('lapse-btn').addEventListener('click', toggleLapse);
+        $('reset-lapse-btn').addEventListener('click', resetCurrentLapse);
+        $('share-pressure-btn').addEventListener('click', () => shareChart(canvases.pressure, 'aerochamber-presiones.png', 'Presiones AeroChamber'));
+        $('share-difference-btn').addEventListener('click', () => shareChart(canvases.difference, 'aerochamber-diferencia.png', 'Diferencia AeroChamber'));
+        $('share-lapses-btn').addEventListener('click', () => shareChart(canvases.lapses, 'aerochamber-lapses.png', 'Lapses AeroChamber'));
+        $('export-csv-btn').addEventListener('click', exportCsv);
+        $('export-lapses-btn').addEventListener('click', exportLapsesCsv);
+
+        loadLocalState();
+        renderLegends();
+        renderCharts();
+        loadSensors();
+        window.setInterval(loadSensors, 250);
+        window.addEventListener('resize', renderCharts);
+      })();
     </script>
   </body>
 </html>
