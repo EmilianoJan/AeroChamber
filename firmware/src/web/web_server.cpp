@@ -21,6 +21,7 @@ void WebServerManager::begin() {
 
 void WebServerManager::update(const std::vector<SensorSample>& sensorSamples) {
   latestSensorSamples_ = sensorSamples;
+  latestSampleTimestampMs_ = millis();
   server_.handleClient();
 }
 
@@ -37,6 +38,7 @@ void WebServerManager::handleRoot() {
 
 void WebServerManager::handleApi() {
   DynamicJsonDocument json(1024);
+  json["timestampMs"] = latestSampleTimestampMs_;
   JsonArray sensors = json.createNestedArray("sensors");
 
   for (const auto& sample : latestSensorSamples_) {

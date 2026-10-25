@@ -17,6 +17,7 @@ class WebServerManager {
  private:
   WebServer server_{80};
   std::vector<SensorSample> latestSensorSamples_;
+  uint32_t latestSampleTimestampMs_ = 0;
   void handleRoot();
   void handleApi();
 };

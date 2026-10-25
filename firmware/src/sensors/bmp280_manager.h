@@ -24,7 +24,7 @@ class Bmp280Manager {
  private:
   std::vector<SensorSample> sensorSamples_;
   std::vector<Adafruit_BMP280> sensors_;
-  bool sensorInitialized_ = false;
+  std::vector<bool> sensorInitialized_;
 };
 
 }  // namespace aerochamber

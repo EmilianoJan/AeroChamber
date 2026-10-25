@@ -229,7 +229,8 @@
         }
 
         function recordSample(data) {
-          const timestampMs = Number(data.timestampMs);
+          const apiTimestampMs = Number(data.timestampMs);
+          const timestampMs = Number.isFinite(apiTimestampMs) ? apiTimestampMs : Date.now();
           if (!Number.isFinite(timestampMs) || timestampMs === state.lastSampleMs) return;
           const sensors = Array.isArray(data.sensors) ? data.sensors : [];
           const first = sensors.find((sensor) => Number(sensor.sensorId) === 1 && sensor.valid);
