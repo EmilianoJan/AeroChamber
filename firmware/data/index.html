@@ -148,7 +148,8 @@
           currentRun: null,
           zeroOffsetPa: null,
           additionalOffsetPa: 0,
-          lastSampleMs: null,
+          lastSampleNumber: null,
+          lastDeviceTimestampMs: null,
           clockOffsetMs: null,
           lastValues: null,
           requestInProgress: false
@@ -228,26 +229,36 @@
           return rawDifference - (state.zeroOffsetPa ?? 0) + state.additionalOffsetPa;
         }
 
-        function recordSample(data) {
-          const apiTimestampMs = Number(data.timestampMs);
-          const timestampMs = Number.isFinite(apiTimestampMs) ? apiTimestampMs : Date.now();
-          if (!Number.isFinite(timestampMs) || timestampMs === state.lastSampleMs) return;
-          const sensors = Array.isArray(data.sensors) ? data.sensors : [];
-          const first = sensors.find((sensor) => Number(sensor.sensorId) === 1 && sensor.valid);
-          const second = sensors.find((sensor) => Number(sensor.sensorId) === 2 && sensor.valid);
-          state.lastSampleMs = timestampMs;
+        function recordSample(sample) {
+          const sampleNumber = Number(sample.sampleNumber);
+          const timestampMs = Number(sample.timestampMs);
+          if (!Number.isInteger(sampleNumber) || sampleNumber < 0 || sampleNumber > 0xffffffff ||
+              !Number.isFinite(timestampMs)) return;
+          if (state.lastSampleNumber !== null) {
+            const distance = (sampleNumber - state.lastSampleNumber) >>> 0;
+            if (distance === 0 || distance >= 0x80000000) return;
+          }
+
+          const valid1 = sample.valid1 === true;
+          const valid2 = sample.valid2 === true;
+          const p1 = valid1 ? Number(sample.pressure1Pa) : null;
+          const p2 = valid2 ? Number(sample.pressure2Pa) : null;
+          const temperature1C = valid1 ? Number(sample.temperature1C) : null;
+          const temperature2C = valid2 ? Number(sample.temperature2C) : null;
+          state.lastSampleNumber = sampleNumber;
           state.lastValues = null;
           const timestamp = toDate(timestampMs).toISOString();
-          const p1 = first ? Number(first.pressurePa) : null;
-          const p2 = second ? Number(second.pressurePa) : null;
           const hasP1 = Number.isFinite(p1);
           const hasP2 = Number.isFinite(p2);
           if (!hasP1 && !hasP2) return;
 
           const pressurePoint = {
+            sampleNumber,
             timestamp,
             sensor1Pa: hasP1 ? p1 : null,
-            sensor2Pa: hasP2 ? p2 : null
+            temperature1C: Number.isFinite(temperature1C) ? temperature1C : null,
+            sensor2Pa: hasP2 ? p2 : null,
+            temperature2C: Number.isFinite(temperature2C) ? temperature2C : null
           };
           state.pressure.push(pressurePoint);
           if (!hasP1 || !hasP2) return;
@@ -265,6 +276,47 @@
             const elapsedSeconds = Math.max(0, (Date.parse(timestamp) - state.currentRun.startedAtMs) / 1000);
             state.currentRun.points.push({ elapsedSeconds, correctedDifferencePa: point.correctedDifferencePa, timestamp });
           }
+        }
+
+        function recordSamples(samples) {
+          if (!samples.length) return null;
+          const newestTimestampMs = Number(samples[samples.length - 1].timestampMs);
+          if (Number.isFinite(newestTimestampMs) &&
+              state.lastDeviceTimestampMs !== null &&
+              newestTimestampMs < state.lastDeviceTimestampMs) {
+            state.lastSampleNumber = null;
+            state.clockOffsetMs = null;
+          }
+          if (state.clockOffsetMs === null && Number.isFinite(newestTimestampMs)) {
+            state.clockOffsetMs = Date.now() - newestTimestampMs;
+          }
+
+          samples.forEach(recordSample);
+          if (Number.isFinite(newestTimestampMs)) {
+            state.lastDeviceTimestampMs = newestTimestampMs;
+          }
+          return samples[samples.length - 1];
+        }
+
+        function renderLatestSensors(sample) {
+          if (!sample) {
+            renderSensors([]);
+            return;
+          }
+          renderSensors([
+            {
+              sensorId: 1,
+              valid: sample.valid1 === true,
+              pressurePa: sample.pressure1Pa,
+              temperatureC: sample.temperature1C
+            },
+            {
+              sensorId: 2,
+              valid: sample.valid2 === true,
+              pressurePa: sample.pressure2Pa,
+              temperatureC: sample.temperature2C
+            }
+          ]);
         }
 
         function drawChart(canvas, series, options) {
@@ -485,11 +537,14 @@
         }
 
         function exportCsv() {
-          const rows = [['fecha_hora', 'sensor1_Pa', 'sensor2_Pa', 'diferencia_bruta_Pa', 'diferencia_corregida_Pa']];
+          const rows = [['numero_muestra', 'fecha_hora', 'sensor1_Pa', 'sensor1_C', 'sensor2_Pa', 'sensor2_C', 'diferencia_bruta_Pa', 'diferencia_corregida_Pa']];
           state.pressure.forEach((point) => rows.push([
+            point.sampleNumber,
             point.timestamp,
             point.sensor1Pa,
+            point.temperature1C,
             point.sensor2Pa,
+            point.temperature2C,
             point.rawDifferencePa,
             correctedDifference(point.rawDifferencePa)
           ]));
@@ -545,9 +600,9 @@
             const response = await fetch('/api/sensors', { cache: 'no-store' });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-            const sensors = Array.isArray(data.sensors) ? data.sensors : [];
-            renderSensors(sensors);
-            recordSample(data);
+            const samples = Array.isArray(data.samples) ? data.samples : [];
+            const latestSample = recordSamples(samples);
+            renderLatestSensors(latestSample);
             $('corrected-value').textContent = state.lastValues
               ? `${state.lastValues.correctedDifferencePa.toFixed(2)} Pa`
               : '-- Pa';
@@ -606,7 +661,7 @@
         renderLegends();
         renderCharts();
         loadSensors();
-        window.setInterval(loadSensors, 250);
+        window.setInterval(loadSensors, 1000);
         window.addEventListener('resize', renderCharts);
       })();
     </script>

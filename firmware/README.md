@@ -21,7 +21,9 @@ firmware/
 
 ## Responsibilities
 
-- Read two BMP280 sensors over I2C (addresses `0x76` and `0x77`).
+- Read two BMP280 sensors over I2C (addresses `0x76` and `0x77`) at approximately 50 samples per second.
+- Keep the latest 100 paired sensor samples in an ESP32 FIFO, with a monotonically increasing sample number and device timestamp for each record.
+- Return the FIFO as one `/api/sensors` response; the browser polls once per second and skips sample numbers it has already processed.
 - Serve the web interface and sensor API from LittleFS on the ESP32.
 - Update pressure plots from each new sensor sample without reloading the page.
 - Set a differential zero from the current `sensor 1 - sensor 2` reading and apply an additional offset in Pa.
@@ -40,6 +42,8 @@ pio run -t uploadfs
 `upload` flashes the firmware; it does **not** upload the page. `uploadfs` builds and flashes the LittleFS image from `data/`, including `data/index.html`. Run `uploadfs` whenever web assets change. The page responds with HTTP 503 and a clear deployment hint if `/index.html` is missing. Connect to the `AESP32` access point, then open `http://192.168.4.1/` on the mobile device.
 
 The live charts show every sample received during the current browser session. Stored lapses persist in that browser's local storage. Clearing browser storage removes saved runs and calibration.
+
+The API response contains `samples` in oldest-to-newest order. Each record includes `sampleNumber`, `timestampMs`, `pressure1Pa`, `temperature1C`, `pressure2Pa`, `temperature2C`, and per-sensor validity flags. The 100-record history provides about two seconds of buffering at the target acquisition rate.
 
 ## Conceptual flow
 

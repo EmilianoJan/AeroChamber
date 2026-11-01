@@ -12,7 +12,7 @@ void Esp32CommManager::begin() {
   wifiStarted_ = WiFi.softAP(kWifiSsid, kWifiPassword);
 
   if (wifiStarted_) {
-    Serial.print("Wi-Fi AP started. SSID: ");
+    Serial.print("Wi-Fi AP started. SSID: "); 
     Serial.println(kWifiSsid);
     Serial.print("AP IP: ");
     Serial.println(WiFi.softAPIP());

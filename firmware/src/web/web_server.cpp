@@ -19,9 +19,8 @@ void WebServerManager::begin() {
   Serial.println("Web server started on port 80");
 }
 
-void WebServerManager::update(const std::vector<SensorSample>& sensorSamples) {
-  latestSensorSamples_ = sensorSamples;
-  latestSampleTimestampMs_ = millis();
+void WebServerManager::update(const Bmp280Manager& sensorManager) {
+  sensorManager_ = &sensorManager;
   server_.handleClient();
 }
 
@@ -37,17 +36,24 @@ void WebServerManager::handleRoot() {
 }
 
 void WebServerManager::handleApi() {
-  DynamicJsonDocument json(1024);
-  json["timestampMs"] = latestSampleTimestampMs_;
-  JsonArray sensors = json.createNestedArray("sensors");
+  JsonDocument json;
+  JsonArray samples = json["samples"].to<JsonArray>();
 
-  for (const auto& sample : latestSensorSamples_) {
-    JsonObject item = sensors.add<JsonObject>();
-    item["sensorId"] = sample.sensorId;
-    item["temperatureC"] = sample.temperatureC;
-    item["pressurePa"] = sample.pressurePa;
-    item["altitudeM"] = sample.altitudeM;
-    item["valid"] = sample.valid;
+  if (sensorManager_ != nullptr) {
+    std::array<SensorRecord, Bmp280Manager::kHistoryCapacity> history;
+    const size_t count = sensorManager_->snapshotHistory(history);
+    for (size_t i = 0; i < count; ++i) {
+      const auto& record = history[i];
+      JsonObject item = samples.add<JsonObject>();
+      item["sampleNumber"] = record.sampleNumber;
+      item["timestampMs"] = record.timestampMs;
+      item["pressure1Pa"] = record.sensors[0].pressurePa;
+      item["temperature1C"] = record.sensors[0].temperatureC;
+      item["pressure2Pa"] = record.sensors[1].pressurePa;
+      item["temperature2C"] = record.sensors[1].temperatureC;
+      item["valid1"] = record.sensors[0].valid;
+      item["valid2"] = record.sensors[1].valid;
+    }
   }
 
   String response;

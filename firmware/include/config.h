@@ -7,11 +7,11 @@ namespace aerochamber {
 constexpr uint8_t kBmp280SensorCount = 2;
 constexpr uint8_t kBmp280BaseAddress = 0x76;
 constexpr uint8_t kWebServerPort = 80;
-constexpr uint32_t kSensorReadIntervalMs = 1000;
-constexpr uint32_t kWebRefreshIntervalMs = 500;
+constexpr uint32_t kSensorReadIntervalMs = 20;
+constexpr uint32_t kWebRefreshIntervalMs = 1000;
 
-constexpr char kWifiSsid[] = "AESP32";
-constexpr char kWifiPassword[] = "aerochamber123";
-constexpr char kBluetoothName[] = "AeroChamber";
+constexpr char kWifiSsid[] = "VALVULIX";
+constexpr char kWifiPassword[] = "valvulix";
+constexpr char kBluetoothName[] = "valvulix";
 
 }  // namespace aerochamber

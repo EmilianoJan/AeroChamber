@@ -1,6 +1,5 @@
 #include <Arduino.h>
 
-#include "config.h"
 #include "comms/esp32_comm.h"
 #include "sensors/bmp280_manager.h"
 #include "web/web_server.h"
@@ -23,9 +22,7 @@ void setup() {
 }
 
 void loop() {
-  bmp280Manager.update();
-  webServer.update(bmp280Manager.readings());
+  webServer.update(bmp280Manager);
   commsManager.update();
-
-  delay(100);
+  delay(1);
 }

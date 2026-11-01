@@ -3,8 +3,6 @@
 #include <Arduino.h>
 #include <WebServer.h>
 
-#include <vector>
-
 #include "sensors/bmp280_manager.h"
 
 namespace aerochamber {
@@ -12,12 +10,11 @@ namespace aerochamber {
 class WebServerManager {
  public:
   void begin();
-  void update(const std::vector<SensorSample>& sensorSamples);
+  void update(const Bmp280Manager& sensorManager);
 
  private:
   WebServer server_{80};
-  std::vector<SensorSample> latestSensorSamples_;
-  uint32_t latestSampleTimestampMs_ = 0;
+  const Bmp280Manager* sensorManager_ = nullptr;
   void handleRoot();
   void handleApi();
 };
