@@ -102,7 +102,7 @@
 
       <section class="card">
         <h2>Presiones en tiempo real</h2>
-        <p>Marcas de fecha y hora. Se muestra cada muestra recibida.</p>
+        <p>Marcas de fecha y hora. Se muestran las muestras de los últimos 20 segundos.</p>
         <div class="toolbar">
           <button id="share-pressure-btn" class="secondary" type="button">Compartir gráfico</button>
           <button id="export-csv-btn" class="secondary" type="button">Exportar CSV</button>
@@ -113,6 +113,7 @@
 
       <section class="card">
         <h2>Diferencia corregida en vivo</h2>
+        <p>Se muestran las muestras de los últimos 20 segundos.</p>
         <div class="toolbar">
           <button id="share-difference-btn" class="secondary" type="button">Compartir gráfico</button>
         </div>
@@ -140,6 +141,8 @@
 
         const STORAGE_KEY = 'aerochamber-lapses-v1';
         const CALIBRATION_KEY = 'aerochamber-calibration-v1';
+        const LIVE_PLOT_WINDOW_MS = 20_000;
+        const MAX_LIVE_PLOT_POINTS = 2_000;
         const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185', '#22d3ee', '#c084fc'];
         const state = {
           pressure: [],
@@ -424,9 +427,20 @@
         }
 
         function renderCharts() {
+          const latestTimestampMs = state.pressure.length
+            ? Date.parse(state.pressure[state.pressure.length - 1].timestamp)
+            : Date.now();
+          const windowStartMs = latestTimestampMs - LIVE_PLOT_WINDOW_MS;
+          const recentPressure = state.pressure
+            .slice(-MAX_LIVE_PLOT_POINTS)
+            .filter((point) => Date.parse(point.timestamp) >= windowStartMs);
+          const recentDifference = state.difference
+            .slice(-MAX_LIVE_PLOT_POINTS)
+            .filter((point) => Date.parse(point.timestamp) >= windowStartMs);
+
           drawChart(canvases.pressure, [
-            { color: colors[0], points: state.pressure.filter((point) => Number.isFinite(point.sensor1Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor1Pa })) },
-            { color: colors[1], points: state.pressure.filter((point) => Number.isFinite(point.sensor2Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor2Pa })) }
+            { color: colors[0], points: recentPressure.filter((point) => Number.isFinite(point.sensor1Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor1Pa })) },
+            { color: colors[1], points: recentPressure.filter((point) => Number.isFinite(point.sensor2Pa)).map((point) => ({ x: Date.parse(point.timestamp), y: point.sensor2Pa })) }
           ], {
             formatX: (value) => new Date(value).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
             xLabel: 'Fecha y hora',
@@ -434,7 +448,7 @@
           });
           drawChart(canvases.difference, [{
             color: colors[2],
-            points: state.difference.map((point) => ({ x: Date.parse(point.timestamp), y: correctedDifference(point.rawDifferencePa) }))
+            points: recentDifference.map((point) => ({ x: Date.parse(point.timestamp), y: correctedDifference(point.rawDifferencePa) }))
           }], {
             formatX: (value) => new Date(value).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
             xLabel: 'Fecha y hora',
